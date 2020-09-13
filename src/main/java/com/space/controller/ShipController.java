@@ -7,7 +7,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -49,7 +48,7 @@ public class ShipController {
     }
 
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Ship> saveShip(@RequestBody Ship ship) {
+    public ResponseEntity<Ship> createShip(@RequestBody Ship ship) {
         HttpHeaders headers = new HttpHeaders();
 
         if (ship == null) {
@@ -63,7 +62,7 @@ public class ShipController {
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Ship> getShip(@PathVariable Long id) {
-        if (id == null) {
+        if (id == null || id <= 0) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -92,7 +91,7 @@ public class ShipController {
 
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Ship> deleteShip(@PathVariable Long id) {
-        if (id == null) {
+        if (id == null || id <= 0) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
