@@ -22,8 +22,8 @@ public class ShipServiceImpl implements ShipService {
     }
 
     @Override
-    public Ship findById(Long id) {
-        return shipRepository.getOne(id);
+    public Ship getById(Long id) {
+        return shipRepository.findById(id).orElse(null);
     }
 
     @Override

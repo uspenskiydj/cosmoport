@@ -8,7 +8,7 @@ public interface ShipService {
 
     List<Ship> findAll();
     Ship saveShip(Ship ship);
-    Ship findById(Long id);
+    Ship getById(Long id);
     void deleteById(Long id);
 
 }
