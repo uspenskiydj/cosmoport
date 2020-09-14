@@ -1,6 +1,7 @@
 package com.space.controller;
 
 import com.space.model.Ship;
+import com.space.model.ShipType;
 import com.space.service.ShipService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -70,7 +72,7 @@ public class ShipController {
         }
 
         double shipSpeed = BigDecimal.valueOf(ship.getSpeed()).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        if (!(shipSpeed >= 0.01 && shipSpeed <= 0.99)) {
+        if (shipSpeed < 0.01 && shipSpeed > 0.99) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -117,18 +119,80 @@ public class ShipController {
     }
 
     @PostMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Ship> updateShip(@RequestBody @PathVariable Long id, UriComponentsBuilder builder) {
-        HttpHeaders headers = new HttpHeaders();
-
-        if (id == null) {
+    public ResponseEntity<Ship> updateShip(@RequestBody Ship ship, @PathVariable Long id) {
+        if (id == null || id <= 0 || ship == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Ship ship = shipService.getById(id);
+        Ship updateShip = shipService.getById(id);
 
-        shipService.saveShip(ship);
+        if (updateShip == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
-        return new ResponseEntity<>(ship, headers, HttpStatus.OK);
+        String shipName = ship.getName();
+        if (shipName != null) {
+            if (shipName.isEmpty() || shipName.length() > 50) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            updateShip.setName(shipName);
+        }
+
+        String shipPlanet = ship.getPlanet();
+        if (shipPlanet != null) {
+            if (shipPlanet.isEmpty() || shipPlanet.length() > 50) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            updateShip.setPlanet(shipPlanet);
+        }
+
+        ShipType shipType = ship.getShipType();
+        if (shipType != null) {
+            updateShip.setShipType(shipType);
+        }
+
+        Double shipSpeed = ship.getSpeed();
+        if (shipSpeed != null) {
+            shipSpeed = BigDecimal.valueOf(shipSpeed).setScale(2, RoundingMode.HALF_UP).doubleValue();
+            if (shipSpeed < 0.01 || shipSpeed > 0.99) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            updateShip.setSpeed(shipSpeed);
+        }
+
+        Integer crewSize = ship.getCrewSize();
+        if (crewSize != null) {
+            if (crewSize < 1 || crewSize > 9999) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            updateShip.setCrewSize(crewSize);
+        }
+
+        try {
+            Date shipProdDate = ship.getProdDate();
+            if (shipProdDate != null) {
+                long prodDate = shipProdDate.getTime();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+                if (prodDate < sdf.parse("2800").getTime()
+                        || prodDate > sdf.parse("3019").getTime()) {
+                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                }
+                updateShip.setProdDate(shipProdDate);
+            }
+        }
+        catch(ParseException ignored) {
+        }
+
+        Boolean isUsed = ship.getIsUsed();
+        if (isUsed != null) {
+            updateShip.setIsUsed(isUsed);
+        }
+
+        updateShip.setRating(getShipRating(updateShip));
+
+        shipService.saveShip(updateShip);
+
+        return new ResponseEntity<>(updateShip, HttpStatus.OK);
     }
 
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
