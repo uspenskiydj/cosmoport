@@ -9,7 +9,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 @RestController
@@ -27,7 +30,7 @@ public class ShipController {
     public ResponseEntity<List<Ship>> getShipsList() {
         List<Ship> ships = shipService.findAll();
 
-        if (ships == null) {
+        if (ships.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
@@ -49,15 +52,54 @@ public class ShipController {
 
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Ship> createShip(@RequestBody Ship ship) {
-        HttpHeaders headers = new HttpHeaders();
-
         if (ship == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
+        if (ship.getName() == null || ship.getPlanet() == null || ship.getShipType() == null
+                || ship.getProdDate() == null || ship.getSpeed() == null || ship.getCrewSize() == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        if (ship.getName().isEmpty() || ship.getName().length() > 50) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        if (ship.getPlanet().isEmpty() || ship.getPlanet().length() > 50) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        double shipSpeed = BigDecimal.valueOf(ship.getSpeed()).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        if (!(shipSpeed >= 0.01 && shipSpeed <= 0.99)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        int crewSize = ship.getCrewSize();
+        if (!(crewSize >= 1 && crewSize <= 9999)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            long prodDate = ship.getProdDate().getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+            if (prodDate < sdf.parse("2800").getTime()
+                    || prodDate > sdf.parse("3019").getTime()) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        }
+        catch(ParseException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        if (ship.getIsUsed() == null) {
+            ship.setIsUsed(false);
+        }
+
+        ship.setRating(getShipRating(ship));
+
         shipService.saveShip(ship);
 
-        return new ResponseEntity<>(ship, headers, HttpStatus.OK);
+        return new ResponseEntity<>(ship, HttpStatus.OK);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -104,5 +146,16 @@ public class ShipController {
         shipService.deleteById(id);
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private double getShipRating(Ship ship) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+        int shipProdYear = Integer.parseInt(sdf.format(ship.getProdDate()));
+        double rating = 80 * ship.getSpeed() / (3019 - shipProdYear + 1);
+        if (ship.getIsUsed()) {
+            rating /= 2;
+        }
+        rating = BigDecimal.valueOf(rating).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return rating;
     }
 }

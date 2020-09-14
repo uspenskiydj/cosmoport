@@ -40,15 +40,13 @@ public class Ship {
     }
 
     public Ship(String name, String planet, ShipType shipType, Date prodDate,
-                Boolean isUsed, Double speed, Integer crewSize, Double rating) {
+                Double speed, Integer crewSize) {
         this.name = name;
         this.planet = planet;
         this.shipType = shipType;
         this.prodDate = prodDate;
-        this.isUsed = isUsed;
         this.speed = speed;
         this.crewSize = crewSize;
-        this.rating = rating;
     }
 
     public Long getId() {
@@ -91,12 +89,12 @@ public class Ship {
         this.prodDate = prodDate;
     }
 
-    public Boolean getUsed() {
+    public Boolean getIsUsed() {
         return isUsed;
     }
 
-    public void setUsed(Boolean used) {
-        isUsed = used;
+    public void setIsUsed(Boolean isUsed) {
+        this.isUsed = isUsed;
     }
 
     public Double getSpeed() {
