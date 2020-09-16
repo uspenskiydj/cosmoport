@@ -90,24 +90,11 @@ public class ShipController {
             filteredShips.add(ship);
         }
 
-        pageNumber = pageNumber == null ? 1 : pageNumber + 1;
-        pageSize = pageSize == null ? 3 : pageSize;
+        ShipSorter.sortShipList(filteredShips, order);
 
-        List<Ship> resultShips = new ArrayList<>();
-        int index1 = pageNumber*pageSize - pageSize;
-        int index2 = pageNumber*pageSize;
-        for (int i = index1; i < index2; i++) {
-            try {
-                resultShips.add(filteredShips.get(i));
-            }
-            catch(Exception e) {
-                break;
-            }
-        }
+        filteredShips = ShipParamsFilter.filterShipListByPages(filteredShips, pageNumber, pageSize);
 
-        ShipSorter.sortShipList(resultShips, order);
-
-        return new ResponseEntity<>(resultShips, HttpStatus.OK);
+        return new ResponseEntity<>(filteredShips, HttpStatus.OK);
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
