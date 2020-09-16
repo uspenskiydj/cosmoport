@@ -8,11 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -166,7 +164,7 @@ public class ShipController {
     private double countShipRating(Ship ship) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
         int shipProdYear = Integer.parseInt(sdf.format(ship.getProdDate()));
-        double rating = 80 * ship.getSpeed() / (3019 - shipProdYear + 1);
+        double rating = 80 * ship.getSpeed() / (3020 - shipProdYear);
         if (ship.getIsUsed()) {
             rating /= 2;
         }
