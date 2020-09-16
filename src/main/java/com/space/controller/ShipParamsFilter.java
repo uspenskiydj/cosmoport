@@ -11,14 +11,16 @@ public class ShipParamsFilter {
     public static int DEFAULT_PAGE_NUMBER = 1;
     public static int DEFAULT_PAGE_SIZE = 3;
 
-    public static List<Ship> getFilteredShipList(List<Ship> ships, HttpServletRequest request) {
+    public static List<Ship> getFilteredShipList(List<Ship> ships, HttpServletRequest request, boolean withPageFilters) {
         List<Ship> filteredShips = filterShipListByParams(ships, request);
 
         ShipSorter.sortShipList(filteredShips, request.getParameter("order"));
 
-        filteredShips = ShipParamsFilter.filterShipListByPages(filteredShips,
-                request.getParameter("pageNumber"),
-                request.getParameter("pageSize"));
+        if (withPageFilters) {
+            filteredShips = ShipParamsFilter.filterShipListByPages(filteredShips,
+                    request.getParameter("pageNumber"),
+                    request.getParameter("pageSize"));
+        }
 
         return filteredShips;
     }

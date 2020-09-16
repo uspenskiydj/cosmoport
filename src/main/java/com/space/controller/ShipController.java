@@ -34,19 +34,20 @@ public class ShipController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        ships = ShipParamsFilter.getFilteredShipList(ships, request);
+        ships = ShipParamsFilter.getFilteredShipList(ships, request, true);
 
         return new ResponseEntity<>(ships, HttpStatus.OK);
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Integer> getShipsCount() {
+    public ResponseEntity<Integer> getShipsCount(HttpServletRequest request) {
         List<Ship> ships = shipService.findAll();
 
         if (ships == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
+        ships = ShipParamsFilter.getFilteredShipList(ships, request, false);
         Integer shipCount = ships.size();
 
         return new ResponseEntity<>(shipCount, HttpStatus.OK);
