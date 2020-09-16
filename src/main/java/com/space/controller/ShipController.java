@@ -8,11 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,73 +28,15 @@ public class ShipController {
     }
 
     @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<List<Ship>> getShipsList(@RequestParam(value = "name", required = false) String name,
-                                                   @RequestParam(value = "planet", required = false) String planet,
-                                                   @RequestParam(value = "shipType", required = false) ShipType shipType,
-                                                   @RequestParam(value = "after", required = false) Long after,
-                                                   @RequestParam(value = "before", required = false) Long before,
-                                                   @RequestParam(value = "isUsed", required = false) Boolean isUsed,
-                                                   @RequestParam(value = "minSpeed", required = false) Double minSpeed,
-                                                   @RequestParam(value = "maxSpeed", required = false) Double maxSpeed,
-                                                   @RequestParam(value = "minCrewSize", required = false) Integer minCrewSize,
-                                                   @RequestParam(value = "maxCrewSize", required = false) Integer maxCrewSize,
-                                                   @RequestParam(value = "minRating", required = false) Double minRating,
-                                                   @RequestParam(value = "maxRating", required = false) Double maxRating,
-                                                   @RequestParam(value = "order", required = false) ShipOrder order,
-                                                   @RequestParam(value = "pageNumber", required = false) Integer pageNumber,
-                                                   @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+    public ResponseEntity<List<Ship>> getShipsList(HttpServletRequest request) {
         List<Ship> ships = shipService.findAll();
         if (ships.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        List<Ship> filteredShips = new ArrayList<>();
+        ships = ShipParamsFilter.getFilteredShipList(ships, request);
 
-        for (Ship ship: ships) {
-            if (name != null && !ship.getName().contains(name)) {
-                continue;
-            }
-            if (planet != null && !ship.getPlanet().contains(planet)) {
-                continue;
-            }
-            if (shipType != null && ship.getShipType() != shipType) {
-                continue;
-            }
-            if (after != null && after > ship.getProdDate().getTime()) {
-                continue;
-            }
-            if (before != null && before < ship.getProdDate().getTime()) {
-                continue;
-            }
-            if (isUsed != null && !ship.getIsUsed().equals(isUsed)) {
-                continue;
-            }
-            if (minSpeed != null && ship.getSpeed() < minSpeed) {
-                continue;
-            }
-            if (maxSpeed != null && ship.getSpeed() > maxSpeed) {
-                continue;
-            }
-            if (minCrewSize != null && ship.getCrewSize() < minCrewSize) {
-                continue;
-            }
-            if (maxCrewSize != null && ship.getCrewSize() > maxCrewSize) {
-                continue;
-            }
-            if (minRating != null && ship.getRating() < minRating) {
-                continue;
-            }
-            if (maxRating != null && ship.getRating() > maxRating) {
-                continue;
-            }
-            filteredShips.add(ship);
-        }
-
-        ShipSorter.sortShipList(filteredShips, order);
-
-        filteredShips = ShipParamsFilter.filterShipListByPages(filteredShips, pageNumber, pageSize);
-
-        return new ResponseEntity<>(filteredShips, HttpStatus.OK);
+        return new ResponseEntity<>(ships, HttpStatus.OK);
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -146,8 +88,7 @@ public class ShipController {
                     || prodDate > sdf.parse("3019").getTime()) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-        }
-        catch(ParseException e) {
+        } catch (ParseException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -237,8 +178,7 @@ public class ShipController {
                 }
                 updateShip.setProdDate(shipProdDate);
             }
-        }
-        catch(ParseException ignored) {
+        } catch (ParseException ignored) {
         }
 
         Boolean isUsed = ship.getIsUsed();

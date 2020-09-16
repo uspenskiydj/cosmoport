@@ -6,11 +6,15 @@ import java.util.List;
 
 public class ShipSorter {
 
-    public static void sortShipList(List<Ship> ships, ShipOrder order) {
+    public static void sortShipList(List<Ship> ships, String order) {
+        ShipOrder shipOrder;
         if (order == null) {
-            order = ShipOrder.ID;
+            shipOrder = ShipOrder.ID;
         }
-        switch(order) {
+        else {
+            shipOrder = ShipOrder.valueOf(order);
+        }
+        switch(shipOrder) {
             case DATE: ships.sort(Comparator.comparing(Ship::getProdDate)); break;
             case SPEED: ships.sort(Comparator.comparingDouble(Ship::getSpeed)); break;
             case RATING: ships.sort(Comparator.comparingDouble(Ship::getRating)); break;
