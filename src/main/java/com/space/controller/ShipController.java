@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -55,41 +56,11 @@ public class ShipController {
 
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Ship> createShip(@RequestBody Ship ship) {
-        if (ship == null) {
+        if (ShipValidator.haveNull(ship)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        if (ship.getName() == null || ship.getPlanet() == null || ship.getShipType() == null
-                || ship.getProdDate() == null || ship.getSpeed() == null || ship.getCrewSize() == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        if (ship.getName().isEmpty() || ship.getName().length() > 50) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        if (ship.getPlanet().isEmpty() || ship.getPlanet().length() > 50) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        double shipSpeed = BigDecimal.valueOf(ship.getSpeed()).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        if (shipSpeed < 0.01 && shipSpeed > 0.99) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        int crewSize = ship.getCrewSize();
-        if (!(crewSize >= 1 && crewSize <= 9999)) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        try {
-            long prodDate = ship.getProdDate().getTime();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
-            if (prodDate < sdf.parse("2800").getTime()
-                    || prodDate > sdf.parse("3019").getTime()) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (ParseException e) {
+        if (!ShipValidator.isCorrectShip(ship)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -97,7 +68,7 @@ public class ShipController {
             ship.setIsUsed(false);
         }
 
-        ship.setRating(getShipRating(ship));
+        ship.setRating(countShipRating(ship));
 
         shipService.saveShip(ship);
 
@@ -124,25 +95,22 @@ public class ShipController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Ship updateShip = shipService.getById(id);
+        if (!ShipValidator.isCorrectShip(ship)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
 
+        Ship updateShip = shipService.getById(id);
         if (updateShip == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
         String shipName = ship.getName();
         if (shipName != null) {
-            if (shipName.isEmpty() || shipName.length() > 50) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
             updateShip.setName(shipName);
         }
 
         String shipPlanet = ship.getPlanet();
         if (shipPlanet != null) {
-            if (shipPlanet.isEmpty() || shipPlanet.length() > 50) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
             updateShip.setPlanet(shipPlanet);
         }
 
@@ -153,33 +121,17 @@ public class ShipController {
 
         Double shipSpeed = ship.getSpeed();
         if (shipSpeed != null) {
-            shipSpeed = BigDecimal.valueOf(shipSpeed).setScale(2, RoundingMode.HALF_UP).doubleValue();
-            if (shipSpeed < 0.01 || shipSpeed > 0.99) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
             updateShip.setSpeed(shipSpeed);
         }
 
         Integer crewSize = ship.getCrewSize();
         if (crewSize != null) {
-            if (crewSize < 1 || crewSize > 9999) {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
             updateShip.setCrewSize(crewSize);
         }
 
-        try {
-            Date shipProdDate = ship.getProdDate();
-            if (shipProdDate != null) {
-                long prodDate = shipProdDate.getTime();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
-                if (prodDate < sdf.parse("2800").getTime()
-                        || prodDate > sdf.parse("3019").getTime()) {
-                    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-                }
-                updateShip.setProdDate(shipProdDate);
-            }
-        } catch (ParseException ignored) {
+        Date shipProdDate = ship.getProdDate();
+        if (shipProdDate != null) {
+            updateShip.setProdDate(shipProdDate);
         }
 
         Boolean isUsed = ship.getIsUsed();
@@ -187,7 +139,7 @@ public class ShipController {
             updateShip.setIsUsed(isUsed);
         }
 
-        updateShip.setRating(getShipRating(updateShip));
+        updateShip.setRating(countShipRating(updateShip));
 
         shipService.saveShip(updateShip);
 
@@ -211,7 +163,7 @@ public class ShipController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    private double getShipRating(Ship ship) {
+    private double countShipRating(Ship ship) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
         int shipProdYear = Integer.parseInt(sdf.format(ship.getProdDate()));
         double rating = 80 * ship.getSpeed() / (3019 - shipProdYear + 1);
